@@ -1,6 +1,5 @@
 //! 画像のリサイズと統計情報表示に関するライブラリ
-mod imagix;
-use imagix::resize;
+pub mod imagix;
 
 #[cfg(test)]
 mod tests {

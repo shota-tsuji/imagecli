@@ -5,14 +5,13 @@ use std::path::PathBuf;
 
 use super::error::ImageXError;
 
-// @param 対象のディレクトリの絶対パス
-// @return 画像ファイルのパス一覧あるいはImageXError
 /// 指定されたディレクトリ内の画像ファイルのパス一覧を返す関数
+///
+/// # Arguments
+/// * `src_folder` - 対象のディレクトリの絶対パス
+/// # Return
+/// * 画像ファイルのパス一覧あるいはImageXError
 pub fn get_image_files(src_folder: PathBuf) -> Result<Vec<PathBuf>, ImageXError> {
-    let mut vec = Vec::new();
-    let file = PathBuf::from("/tmp/images/image_someone_1.jpg");
-    vec.push(file);
-
     let entries = fs::read_dir(src_folder)
         .map_err(|_e| ImageXError::UserInputError("Invalid source folder".to_string()))?
         .map(|res| res.map(|e| e.path()))
