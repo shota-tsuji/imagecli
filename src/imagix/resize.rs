@@ -3,7 +3,7 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
-use super::error::ImageXError;
+use crate::imagix::error::ImageXError;
 
 /// 指定されたディレクトリ内の画像ファイルのパス一覧を返す関数
 ///
@@ -15,7 +15,9 @@ pub fn get_image_files(src_folder: PathBuf) -> Result<Vec<PathBuf>, ImageXError>
     let entries = fs::read_dir(src_folder)
         .map_err(|_e| ImageXError::UserInputError("Invalid source folder".to_string()))?
         .map(|res| res.map(|e| e.path()))
-        .collect::<Result<Vec<_>, io::Error>>()? // mapを適用した後にエラーにならなかったものを通す
+        .collect::<Result<Vec<_>, io::Error>>(); // mapを適用した後にエラーにならなかったものを通す
+
+    let image_entries = entries?
         .into_iter()
         .filter(|r| {
             r.extension() == Some("JPG".as_ref())
@@ -24,20 +26,40 @@ pub fn get_image_files(src_folder: PathBuf) -> Result<Vec<PathBuf>, ImageXError>
                 || r.extension() == Some("png".as_ref())
         })
         .collect();
-    Ok(entries)
+
+    Ok(image_entries)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::File;
 
     #[test]
-    // ディレクトリの絶対パスを受け取ってそのディレクトリに含まれる画像ファイルのパスをVectorとして返す
+    // ディレクトリのパスを受け取るとそのディレクトリ内の画像ファイルのパスを含むVectorが返る
     fn test_get_image_files_1() {
-        let directory = PathBuf::from("/tmp/images/");
-        let file = PathBuf::from("/tmp/images/image_someone_1.jpg");
-        let expected = vec![file];
+        const TARGET_DIR: &'static str = "/tmp/test/images/";
+        let directory = PathBuf::from(TARGET_DIR);
+        let file_image = PathBuf::from(TARGET_DIR.to_string() + "image_someone_1.jpg");
+        let file_text = PathBuf::from(TARGET_DIR.to_string() + "file.txt");
 
-        assert_eq!(expected, get_image_files(directory));
+        let _ = fs::create_dir_all(directory.as_path());
+        let _ = fs::remove_file(file_image.as_path());
+        let _ = File::create(file_image.as_path());
+        let _ = File::create(file_text.as_path());
+
+        assert_eq!(vec![file_image], get_image_files(directory).unwrap());
+    }
+
+    #[test]
+    // 空のディレクトリのパスを受け取ると空のVectorが返る
+    fn test_get_image_files_2() {
+        const TARGET_DIR: &'static str = "/tmp/test/empty/";
+        let directory = PathBuf::from(TARGET_DIR);
+        let _ = fs::create_dir_all(directory.as_path());
+
+        let expected: Vec<PathBuf> = Vec::new();
+
+        assert_eq!(expected, get_image_files(directory).unwrap());
     }
 }
